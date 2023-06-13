@@ -1,5 +1,14 @@
 # Answer key - Quality Control Analysis
 
+**1. Extract the new metadata from the filtered Seurat object using the code provided below:**
+
+```
+# Save filtered subset to new metadata
+metadata_clean <- filtered_seurat@meta.data
+```
+
+**2. Perform all of the same QC plots using the filtered data.**
+
 ### Cell counts
 
 After filtering, we should not have more cells than we sequenced. Generally we aim to have about the number we sequenced or a bit less. 
@@ -104,3 +113,19 @@ metadata_clean %>%
 <p align="center">
 <img src="../img/novelty_filtered.png" width="600">
 </p>
+
+
+**3. Report the number of cells left for each sample, and comment on whether the number of cells removed is high or low. Can you give reasons why this number is still not ~12K (which is how many cells were loaded for the experiment)?**
+
+There are just under 15K cells left for both the control and stim cells. The number of cells removed is reasonably low. 
+
+While it would be ideal to have 12K cells, we do not expect that due to the lower capture efficiency (i.e. the number of actual cells encapsulated within droplets containing barcodes) of these technologies. If we still see higher than expected numbers of cells after filtering, this means we could afford to filter more stringently (but we don't necessarily have to).
+
+**4. After filtering for nGene per cell, you should still observe a small shoulder to the right of the main peak. What might this shoulder represent?**
+
+This peak could represent a biologically distinct population of cells. It could be a set a of cells that share some properties and as a consequence exhibit more diversity in its transcriptome (with the larger number of genes detected).
+
+
+**5. When plotting the nGene against nUMI do you observe any data points in the bottom right quadrant of the plot? What can you say about these cells that have been removed?**
+
+The cells that were removed were those with high nUMI but low numbers of genes detected. These cells had many captured transcripts but represent only a small number of genes. These low complexity cells could represent a specific cell type (i.e. red blood cells which lack a typical transcriptome), or could be due to some other strange artifact or contamination.

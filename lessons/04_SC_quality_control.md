@@ -8,13 +8,13 @@ Approximate time: 90 minutes
 
 ## Learning Objectives:
 
-* Construct QC metrics and associated plots to visually explore the quality of the data
-* Evaluate the QC metrics and set filters to remove low quality cells
+* Construct quality control metrics and visually evaluate the quality of the data
+* Apply appropriate filters to remove low quality cells
 
 # Single-cell RNA-seq: Quality control
 
 <p align="center">
-<img src="../img/sc_workflow_integration.png" width="800">
+<img src="../img/sc_workflow_2022.jpg" width="630">
 </p>
 
 ***
@@ -61,9 +61,9 @@ In order to create the appropriate plots for the quality control analysis, we ne
 - **number of genes detected per UMI:** this metric with give us an idea of the complexity of our dataset (more genes detected per UMI, more complex our data)
 - **mitochondrial ratio:** this metric will give us a percentage of cell reads originating from the mitochondrial genes
 
-### Number of genes detected per UMI
+### Novelty score
 
-This value is quite easy to calculate, as we simply divide the number of genes detected per cell by the number of UMIs per cell. We will log10 transform the result for a better comparison between samples.
+This value is quite easy to calculate, as we take the log10 of the number of genes detected per cell and the log10 of the number of UMIs per cell, then divide the log10 number of genes by the log10 number of UMIs. The novelty score and how it relates to complexity of the RNA species, is described in more detail later in this lesson.
 
 ```r
 # Add number of genes per UMI for each cell to metadata
@@ -154,9 +154,9 @@ Now that we have generated the various metrics to assess, we can explore them wi
 - Cell counts
 - UMI counts per cell
 - Genes detected per cell
-- UMIs vs. genes detected
+- Complexity (novelty score)
 - Mitochondrial counts ratio
-- Novelty
+
 
 > **What about doublets?** In single-cell RNA sequencing experiments, doublets are generated from two cells. They typically arise due to errors in cell sorting or capture, especially in droplet-based protocols involving thousands of cells. Doublets are obviously undesirable when the aim is to characterize populations at the single-cell level. In particular, they can incorrectly suggest the existence of intermediate populations or transitory states that do not actually exist. Thus, it is desirable to remove doublet libraries so that they do not compromise interpretation of the results.
 
@@ -213,7 +213,7 @@ We can see that majority of our cells in both samples have 1000 UMIs or greater,
 
 ### Genes detected per cell
 
-We have similar expectations for gene detection as for UMI detection, although it may be a bit lower than UMIs. For high quality data, the proportional histogram should contain **a single large peak that represents cells that were encapsulated**. If we see a **small shoulder** to the right of the major peak (not present in our data), or a bimodal distribution of the cells, that can indicate a couple of things. It might be that there are a set of **cells that failed** for some reason. It could also be that there are **biologically different types of cells** (i.e. quiescent cell populations, less complex cells of interest), and/or one type is much smaller than the other (i.e. cells with high counts may be cells that are larger in size). Therefore, this threshold should be assessed with other metrics that we describe in this lesson.
+We have similar expectations for gene detection as for UMI detection, although it may be a bit lower than UMIs. For high quality data, the proportional histogram should contain **a single large peak that represents cells that were encapsulated**. If we see a **small shoulder** to the left of the major peak (not present in our data), or a bimodal distribution of the cells, that can indicate a couple of things. It might be that there are a set of **cells that failed** for some reason. It could also be that there are **biologically different types of cells** (i.e. quiescent cell populations, less complex cells of interest), and/or one type is much smaller than the other (i.e. cells with high counts may be cells that are larger in size). Therefore, this threshold should be assessed with other metrics that we describe in this lesson.
  
 
 ```r
@@ -225,50 +225,28 @@ metadata %>%
   	scale_x_log10() + 
   	geom_vline(xintercept = 300)
 
-# Visualize the distribution of genes detected per cell via boxplot
-metadata %>% 
-  	ggplot(aes(x=sample, y=log10(nGene), fill=sample)) + 
-  	geom_boxplot() + 
-  	theme_classic() +
-  	theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
-  	theme(plot.title = element_text(hjust=0.5, face="bold")) +
-  	ggtitle("NCells vs NGenes")
 ```
 
 <p align="center">
 <img src="../img/genes_detected.png" width="600">
 </p>
 
-<p align="center">
-<img src="../img/Ncells_vs_ngenes.png" width="600">
-</p>
 
+### Complexity
 
-### UMIs vs. genes detected
-
-Two metrics that are often evaluated together are the number of UMIs and the number of genes detected per cell. Here, we have plotted the **number of genes versus the number of UMIs coloured by the fraction of mitochondrial reads**. Mitochondrial read fractions are only high in particularly low count cells with few detected genes (darker colored data points). This could be indicative of damaged/dying cells whose cytoplasmic mRNA has leaked out through a broken membrane, and thus, only mRNA located in the mitochondria is still conserved. These cells are filtered out by our count and gene number thresholds. Jointly visualizing the count and gene thresholds shows the **joint filtering effect**.
-
-Cells that are **poor quality are likely to have low genes and UMIs per cell**, and correspond to the data points in the bottom left quadrant of the plot. Good cells will generally exhibit both higher number of genes per cell and higher numbers of UMIs. 
-
-With this plot we also evaluate the **slope of the line**, and any scatter of data points in the bottom right hand quadrant of the plot. These cells have a high number of UMIs but only a few number of genes. These could be dying cells, but also could represent a population of a low complexity celltype (i.e red blood cells).
+We can evaluate each cell in terms of how complex the RNA species are by using a measure called the novelty score. The novelty score is computed by taking the ratio of nGenes over nUMI. If there are many captured transcripts (high nUMI) and a low number of genes detected in a cell, this likely means that you only captured a low number of genes and simply sequenced transcripts from those lower number of genes over and over again. These low complexity (low novelty) cells could represent a specific cell type (i.e. red blood cells which lack a typical transcriptome), or could be due to an artifact or contamination. Generally, we expect the novelty score to be above 0.80 for good quality cells.
 
 ```r
-# Visualize the correlation between genes detected and number of UMIs and determine whether strong presence of cells with low numbers of genes/UMIs
-metadata %>% 
-  	ggplot(aes(x=nUMI, y=nGene, color=mitoRatio)) + 
-  	geom_point() + 
-	scale_colour_gradient(low = "gray90", high = "black") +
-  	stat_smooth(method=lm) +
-  	scale_x_log10() + 
-  	scale_y_log10() + 
+# Visualize the overall complexity of the gene expression by visualizing the genes detected per UMI (novelty score)
+metadata %>%
+  	ggplot(aes(x=log10GenesPerUMI, color = sample, fill=sample)) +
+  	geom_density(alpha = 0.2) +
   	theme_classic() +
-  	geom_vline(xintercept = 500) +
-  	geom_hline(yintercept = 250) +
-  	facet_wrap(~sample)
+  	geom_vline(xintercept = 0.8)
 ```
 
 <p align="center">
-<img src="../img/UMI_vs_genes_updated.png" width="600">
+<img src="../img/novelty.png" width="600">
 </p>
 
 ### Mitochondrial counts ratio
@@ -289,29 +267,41 @@ metadata %>%
 <img src="../img/mitoRatio.png" width="600">
 </p>
 
-### Complexity
-
-We can see the samples where we sequenced each cell less have a higher overall complexity, that is because we have not started saturating the sequencing for any given gene for these samples. Outlier cells in these samples might be cells that have a less complex RNA species than other cells. Sometimes we **can detect contamination with low complexity cell types** like red blood cells via this metric. Generally, we expect the novelty score to be above 0.80.
-
-```r
-# Visualize the overall complexity of the gene expression by visualizing the genes detected per UMI
-metadata %>%
-  	ggplot(aes(x=log10GenesPerUMI, color = sample, fill=sample)) +
-  	geom_density(alpha = 0.2) +
-  	theme_classic() +
-  	geom_vline(xintercept = 0.8)
-```
-
-<p align="center">
-<img src="../img/novelty.png" width="600">
-</p>
-
 > **NOTE:** **Reads per cell** is another metric that can be useful to explore; however, the workflow used would need to save this information to assess. Generally, with this metric you hope to see all of the samples with peaks in relatively the same location between 10,000 and 100,000 reads per cell. 
 
 
-## Filtering
+### Joint filtering effects
 
-In conclusion, considering any of these QC metrics in isolation can lead to misinterpretation of cellular signals. For example, cells with a comparatively high fraction of mitochondrial counts may be involved in respiratory processes and may be cells that you would like to keep. Likewise, other metrics can have other biological interpretations. Thus, always **consider the joint effects of these metrics when setting thresholds and set them to be as permissive as possible to avoid filtering out viable cell populations unintentionally**. 
+Considering any of these QC metrics in isolation can lead to misinterpretation of cellular signals. For example, cells with a comparatively high fraction of mitochondrial counts may be involved in respiratory processes and may be cells that you would like to keep. Likewise, other metrics can have other biological interpretations.  A general rule of thumb when performing QC is to **set thresholds for individual metrics to be as permissive as possible, and always consider the joint effects** of these metrics. In this way, you reduce the risk of filtering out any viable cell populations. 
+
+
+Two metrics that are often evaluated together are the number of UMIs and the number of genes detected per cell. Here, we have plotted the **number of genes versus the number of UMIs coloured by the fraction of mitochondrial reads**. Jointly visualizing the count and gene thresholds and additionally overlaying the mitochondrial fraction, gives a summarized persepective of the quality per cell.
+
+```r
+# Visualize the correlation between genes detected and number of UMIs and determine whether strong presence of cells with low numbers of genes/UMIs
+metadata %>% 
+  	ggplot(aes(x=nUMI, y=nGene, color=mitoRatio)) + 
+  	geom_point() + 
+	scale_colour_gradient(low = "gray90", high = "black") +
+  	stat_smooth(method=lm) +
+  	scale_x_log10() + 
+  	scale_y_log10() + 
+  	theme_classic() +
+  	geom_vline(xintercept = 500) +
+  	geom_hline(yintercept = 250) +
+  	facet_wrap(~sample)
+```
+
+<p align="center">
+<img src="../img/UMI_vs_genes_updated.png" width="600">
+</p>
+
+Good cells will generally exhibit both higher number of genes per cell and higher numbers of UMIs (upper right quadrant of the plot). Cells that are **poor quality are likely to have low genes and UMIs per cell**, and correspond to the data points in the bottom left quadrant of the plot. With this plot we also evaluate the **slope of the line**, and any scatter of data points in the **bottom right hand quadrant** of the plot. These cells have a high number of UMIs but only a few number of genes. These could be dying cells, but also could represent a population of a low complexity celltype (i.e red blood cells).
+
+**Mitochondrial read fractions are only high in particularly low count cells with few detected genes** (darker colored data points). This could be indicative of damaged/dying cells whose cytoplasmic mRNA has leaked out through a broken membrane, and thus, only mRNA located in the mitochondria is still conserved. We can see from the plot, that these cells are filtered out by our count and gene number thresholds. 
+
+
+## Filtering
 
 ### Cell-level filtering
 
@@ -325,7 +315,7 @@ Now that we have visualized the various metrics, we can decide on the thresholds
 To filter, we wil go back to our Seurat object and use the `subset()` function:
 
 ```r
-# Filter out low quality reads using selected thresholds - these will change with experiment
+# Filter out low quality cells using selected thresholds - these will change with experiment
 filtered_seurat <- subset(x = merged_seurat, 
                          subset= (nUMI >= 500) & 
                            (nGene >= 250) & 
@@ -379,14 +369,14 @@ After performing the filtering, it's recommended to look back over the metrics t
 	metadata_clean <- filtered_seurat@meta.data
 	```
 
-2. Perform all of the same plots using the filtered data as we had done with the unfiltered data and answer the following questions:
+2. Perform all of the same QC plots using the filtered data.
 
-	1. **Cell counts**: Do the Ctrl and Stim group have similar cell counts after filtering?
-	1. **UMI counts** (transcripts) per cell: Do you observe the removal of any cells with less than 500 UMI?
-	1. **Genes detected per cell**: Do you observe the removal of any cells with less than 250 genes?
-	1. **UMIs vs. genes detected**: Do you observe any cells with a high number of UMIs but only a few number of genes?
-	1. **Mitochondrial counts ratio**: Do you observe the removal of cells with more than 0.2 mitochondrial counts ratio?
-	1. **Complexity**: Do you observe the removal of cells with less than 0.8 log10GenesPerUMI?
+3. Report the number of cells left for each sample, and comment on whether the number of cells removed is high or low. Can you give reasons why this number is still not ~12K (which is how many cells were loaded for the experiment)?
+
+4. After filtering for nGene per cell, you should still observe a small shoulder to the right of the main peak. What might this shoulder represent?
+
+5. When plotting the nGene against nUMI do you observe any data points in the bottom right quadrant of the plot? What can you say about these cells that have been removed?
+
 
 ***
 

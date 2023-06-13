@@ -8,17 +8,16 @@ Approximate time: 20 minutes
 
 ## Learning Objectives:
 
-* Describe the steps of the workflow for single-cell RNA-seq once the initial QC has been performed
-
+* Describe the workflow for single-cell RNA-seq analysis after the quality control step.
 
 
 # Single-cell RNA-seq Clustering Workflow
 
 Now that we have our high quality cells, we can move forward with the workflow. Ultimately, we want to cluster cells and identify different potential celltypes however there are a few steps to walk-through before we get there. **The green boxes in our workflow schematic below correspond to the steps taken post-QC and together consistute the clustering workflow.**
 
-
-<img src="../img/sc_workflow_integration.png" width="800">
-
+<p align="center">
+<img src="../img/sc_workflow_2022.jpg" width="630">
+</p>
 
 ## Clustering workflow
 
@@ -42,7 +41,7 @@ Seurat recently introduced a new method called `sctransform` which performs mult
 
 ### 3. Integration
 
-Often with single cell RNA-seq we are working with multiple samples which correspond to different sample groups, multiple experiments or different modalities. If we want to ultimately compare celltype expression between groups it is recommended to integrate the data. Integration is a powerful method that uses these shared sources of greatest variation to identify shared sub-populations across conditions or datasets [Stuart and Bulter et al. (2018)]. There are several steps involved in performing intergration in Seurat. Once complete, we use visualization methods to ensure a good integration before we proceed to cluster cells.
+Often with single cell RNA-seq we are working with multiple samples which correspond to different sample groups, multiple experiments or different modalities. If we want to ultimately compare celltype expression between groups it is recommended to integrate the data. Integration is a powerful method that uses these shared sources of greatest variation to identify shared sub-populations across conditions or datasets [Stuart and Butler et al. (2018)]. There are several steps involved in performing intergration in Seurat. Once complete, we use visualization methods to ensure a good integration before we proceed to cluster cells.
 
 > **NOTE:** Integration is optional. We recommend going through the workflow without integration to decide whether or not it is necessary for your data. 
 

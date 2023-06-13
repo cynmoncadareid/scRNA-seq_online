@@ -36,7 +36,7 @@ Popular methods to address some of the more common investigations include:
 
 ## Challenges of scRNA-seq analysis
 
-Prior to scRNA-seq, transcriptome analysis was performed using bulk RNA-seq, which is a straight-forward method for comparing the **averages of cellular expression**. This can be the best choice of method if looking for **disease biomarkers** or not expecting or **not concerned with a lot of cellular heterogeneity** in the sample.
+Prior to scRNA-seq, transcriptome analysis was performed using **bulk RNA-seq**, which is a straight-forward method for comparing the **averages of cellular expression**. This method can be a good choice if looking at comparative transcriptomics (e.g. samples of the same tissue from different species), and for quantifying expression signatures in disease studies. It also has potential for the discovery of disease biomarkers if you are **not expecting or not concerned about cellular heterogeneity** in the sample.
 
 While bulk RNA-seq can explore differences in gene expression between conditions (e.g. treatment or disease), the differences at the cellular level are not adequately captured. For instance, in the images below, if analyzed in bulk (left) we would not detect the correct association between the expression of gene A and gene B. However, if we properly group the cells by cell type or cell state, we can see the correct correlation between the genes.
 
@@ -64,7 +64,7 @@ Expression data from scRNA-seq experiments represent tens or hundreds of thousan
 
 For the droplet-based methods of scRNA-seq, the depth of sequencing is shallow, often detecting only 10-50% of the transcriptome per cell. This results in cells showing zero counts for many of the genes. However, in a particular cell, a zero count for a gene could either mean that the gene was **not being expressed** or the transcripts were just **not detected**. Across cells, genes with higher levels of expression tend to have fewer zeros. Due to this feature, many genes will not be detected in any cell and gene expression will be highly variable between cells.
 
-> **Zero-inflated?** scRNA-seq data is often referred to as zero-inflated; however, recent analyses suggest that it does not contain more zeros than what would be expected given the sequencing depth [[Valentine Svensson's blog post](http://www.nxn.se/valent/2017/11/16/droplet-scrna-seq-is-not-zero-inflated)].
+> **Zero-inflated?** scRNA-seq data is often referred to as zero-inflated; however, recent analyses suggest that it does not contain more zeros than what would be expected given the sequencing depth [[Valentine Svensson's blog post](http://www.nxn.se/valent/2017/11/16/droplet-scrna-seq-is-not-zero-inflated)]. A more recent paper discussing modeling of scRNA-seq data is also [available](https://www.nature.com/articles/s41588-021-00873-4).
 
 ### Biological variability across cells/samples
 
@@ -144,6 +144,18 @@ While scRNA-seq is a **powerful and insightful method** for the analysis of gene
 	- Isolate RNA from samples at same time 
 	- Prepare libraries at same time or alternate sample groups to avoid batch confounding
 	- Do not confound sample groups by sex, age, or batch
+
+---
+
+> ### How does single-nucleus RNA-seq (snRNA-seq) compare to single-cell RNA-seq?
+>  _**We will not be covering snRNA-seq in this workshop!**_ Below is a brief overview of snRNA-seq.
+>
+> snRNA-seq analyzes the expression profiles from nuclei, instead of intact cells. As you may expect, fewer transcripts are detected from the nuclei (~7,000 genes), compared to intact cells (~11,000 genes). In some situations (depending on your research materials and goals), snRNA-seq can be the preferred method as opposed to scRNA-seq. 
+> 
+> Some advantages of snRNA-seq include:
+> * Works well with hard-to-isolate samples (for example, adipocytes), as well as frozen tissues
+> * Reduces transcriptional artifacts from the isolation process
+> * Provides less biased cellular coverage
 
 ***
 
